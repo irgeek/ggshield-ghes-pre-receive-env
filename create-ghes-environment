@@ -41,7 +41,7 @@ archive_path="$PWD/$image_name.tar.gz"
 
 log_progress "Building custom image, based on debian:stable"
 
-docker build --tag "$image_name" --file Dockerfile
+docker build --tag "$image_name" --file Dockerfile .
 
 log_progress "Building container from image"
 docker create --name "$image_name" "$image_name" /bin/true
