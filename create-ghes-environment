@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROGNAME=$(basename "$0")
+
+log_progress() {
+    echo "$PROGNAME: $*" >&2
+}
+
+usage() {
+    if [ "$*" != "" ] ; then
+        echo "Error: $*" >&2
+        echo >&2
+    fi
+
+    cat << EOF
+Usage: $PROGNAME [OPTION ...]
+Creates a GitHub Enterprise Server pre-receive hook environment for GGShield.
+
+Options:
+  -h, --help          display this usage message and exit
+EOF
+
+    exit 1
+}
+
+while [ $# -gt 0 ] ; do
+    case "$1" in
+    -h|--help)
+        usage
+        ;;
+    *)
+        usage "Too many arguments"
+        ;;
+    esac
+    shift
+done
+
+image_name="ggshield-ghes-pre-receive"
+archive_path="$PWD/$image_name.tar.gz"
+
+log_progress "Building custom image, based on debian:stable"
+
+docker build --tag "$image_name" --file Dockerfile
+
+log_progress "Building container from image"
+docker create --name "$image_name" "$image_name" /bin/true
+
+log_progress "Exporting pre-receive environment"
+docker export "$image_name" | gzip -c > "$archive_path"
+
+log_progress "Cleaning up"
+docker container rm "$image_name" || true
